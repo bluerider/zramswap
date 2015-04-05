@@ -19,13 +19,13 @@ makeSwap() {
 }
 
 stopSwap() {
- swapoff "/dev/zram$1";
- zramctl -r "/dev/zram$1";
+ swapoff "$1";
+ zramctl -r "$1";
 }
 
 resetSwap() {
- swapoff "/dev/zram$1";
- swapon -f "/dev/zram$1";
+ swapoff "$1";
+ swapon -f "$1";
 }
 
 ## makeSwap function accepts integer as $1
@@ -51,13 +51,13 @@ case $1 in
   stop)
     for a in $(swapon --noheadings); do
       if [[ "$a" == /dev/zram* ]]; then
-         stopSwap "${a/\/dev\/zram/}";
+         stopSwap "$a";
       fi;
     done;;
   restart)
     for a in $(swapon --noheadings); do
       if [[ "$a" == /dev/zram* ]]; then
-         resetSwap "${a/\/dev\/zram/}";
+         resetSwap "$a";
       fi;
     done;;
   *)
