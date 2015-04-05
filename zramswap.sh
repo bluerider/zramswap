@@ -1,0 +1,65 @@
+#!/bin/bash
+
+## mem_size is total ram size in megabytes
+## size        : array   : accepts integer sizes in K,M,G
+## num_devices : integer : number of devices requested
+## threads     : array   : accepts integers for # threads to use
+## algo        : array   : accepts lzo or lz4
+mem_array=($(free -m))
+declare -r mem_size=${mem_array[7]}
+unset mem_array;
+declare -a size=($[mem_size/2]M)
+declare -a algo=(lzo)
+declare -a threads=($(nproc))
+declare -r num_devices=1
+
+makeSwap() {
+ mkswap "$1"
+ swapon "$1"
+}
+
+stopSwap() {
+ swapoff "/dev/zram$1";
+ zramctl -r "/dev/zram$1";
+}
+
+resetSwap() {
+ swapoff "/dev/zram$1";
+ swapon -f "/dev/zram$1";
+}
+
+## makeSwap function accepts integer as $1
+enableZmodule() {
+ makeSwap "$(zramctl -f -s ${size[$1]} -a lzo -t ${threads[$1]})"
+}
+
+case $1 in
+  start)
+    count() {
+      echo $#
+    }
+    if [ ! -b "/dev/zram/0" ]; then
+       modprobe zram num_devices=$[num_devices+2];
+    fi;
+    if [[ $[$(count /dev/zram*)-$(count $(zramctl -n --raw))/7] -ge $num_devices ]]; then
+       for ((i=0;i<$num_devices;i++)); do
+           enableZmodule $i;
+       done;
+      else
+       echo "Not enough zram devices";
+    fi;;
+  stop)
+    for a in $(swapon --noheadings); do
+      if [[ "$a" == /dev/zram* ]]; then
+         stopSwap "${a/\/dev\/zram/}";
+      fi;
+    done;;
+  restart)
+    for a in $(swapon --noheadings); do
+      if [[ "$a" == /dev/zram* ]]; then
+         resetSwap "${a/\/dev\/zram/}";
+      fi;
+    done;;
+  *)
+    echo "Not a valid option";;
+esac;
