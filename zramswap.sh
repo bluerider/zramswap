@@ -39,7 +39,7 @@ case $1 in
       echo $#
     }
     ## if no zram devices. ensure there is 2 more than needed
-    if [ ! -b "/dev/zram/0" ]; then
+    if [ ! -b "/dev/zram0" ]; then
        modprobe zram num_devices=$[num_devices+2];
     fi;
     ## check if there are enough devices; there are 7 lines per device in zramctl
